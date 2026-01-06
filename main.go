@@ -6,32 +6,63 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings" 
+	"strings"
 
+	"github.com/kkdai/youtube/v2" 
 	"github.com/schollz/progressbar/v3"
 )
 
 func main() {
-	fmt.Println("AnySaver Downloader Starting... 🚀")
+	fmt.Println("AnySaver Ultimate Downloader Starting... 🚀")
 
 	reader := bufio.NewReader(os.Stdin)
-
-	fmt.Print("Enter URL to download: ")
-
+	fmt.Print("Enter Video URL: ")
 	urlInput, _ := reader.ReadString('\n')
-	
-	fileUrl := strings.TrimSpace(urlInput)
+	url := strings.TrimSpace(urlInput)
 
-	fmt.Print("Enter name to save as (e.g. video.mp4): ")
-	nameInput, _ := reader.ReadString('\n')
-	fileName := strings.TrimSpace(nameInput)
+	if strings.Contains(url, "youtu") {
+		fmt.Println("YouTube Link Detected! 🟥")
+		downloadYoutubeVideo(url)
+	} else {
+		fmt.Println("Direct Link Detected! 🔗")
+		downloadDirectFile(url)
+	}
+}
 
-	if fileName == "" {
-		fileName = "downloaded_file.mp4"
+func downloadYoutubeVideo(videoURL string) {
+	client := youtube.Client{}
+
+	video, err := client.GetVideo(videoURL)
+	if err != nil {
+		fmt.Println("Error getting video info:", err)
+		return
 	}
 
-	fmt.Println("Downloading:", fileUrl)
-	fmt.Println("Saving as:", fileName)
+	fmt.Printf("Downloading: %s \n", video.Title)
+
+	formats := video.Formats.WithAudioChannels() 
+	stream, _, err := client.GetStream(video, &formats[0])
+	if err != nil {
+		fmt.Println("Error getting stream:", err)
+		return
+	}
+	defer stream.Close()
+
+	fileName := "youtube_video.mp4"
+	file, _ := os.Create(fileName)
+	defer file.Close()
+
+	fmt.Println("Starting Download...")
+	bar := progressbar.DefaultBytes(
+		int64(formats[0].ContentLength),
+		"downloading",
+	)
+	io.Copy(io.MultiWriter(file, bar), stream)
+	fmt.Println("\nYouTube Video Saved! ✅")
+}
+
+func downloadDirectFile(fileUrl string) {
+	fileName := "direct_download.mp4"
 
 	req, _ := http.NewRequest("GET", fileUrl, nil)
 	resp, err := http.DefaultClient.Do(req)
@@ -41,11 +72,6 @@ func main() {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		fmt.Println("Error: File not found! Status Code:", resp.StatusCode)
-		return
-	}
-
 	file, _ := os.Create(fileName)
 	defer file.Close()
 
@@ -53,8 +79,6 @@ func main() {
 		resp.ContentLength,
 		"downloading",
 	)
-
 	io.Copy(io.MultiWriter(file, bar), resp.Body)
-
-	fmt.Println("\nවැඩේ ඉවරයි! File Saved. ✅")
+	fmt.Println("\nFile Saved! ✅")
 }
