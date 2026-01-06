@@ -1,21 +1,37 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"strings" 
 
-	"github.com/schollz/progressbar/v3" 
+	"github.com/schollz/progressbar/v3"
 )
 
 func main() {
-	fmt.Println("AnySaver Video Downloader Starting... 🎥")
+	fmt.Println("AnySaver Downloader Starting... 🚀")
 
-	fileUrl := "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
-	fileName := "my_video.mp4"
+	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Println("Downloading Video:", fileName)
+	fmt.Print("Enter URL to download: ")
+
+	urlInput, _ := reader.ReadString('\n')
+	
+	fileUrl := strings.TrimSpace(urlInput)
+
+	fmt.Print("Enter name to save as (e.g. video.mp4): ")
+	nameInput, _ := reader.ReadString('\n')
+	fileName := strings.TrimSpace(nameInput)
+
+	if fileName == "" {
+		fileName = "downloaded_file.mp4"
+	}
+
+	fmt.Println("Downloading:", fileUrl)
+	fmt.Println("Saving as:", fileName)
 
 	req, _ := http.NewRequest("GET", fileUrl, nil)
 	resp, err := http.DefaultClient.Do(req)
@@ -24,6 +40,11 @@ func main() {
 		return
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		fmt.Println("Error: File not found! Status Code:", resp.StatusCode)
+		return
+	}
 
 	file, _ := os.Create(fileName)
 	defer file.Close()
@@ -35,5 +56,5 @@ func main() {
 
 	io.Copy(io.MultiWriter(file, bar), resp.Body)
 
-	fmt.Println("\nවැඩේ ඉවරයි! Video එක Download වුණා. Play කරලා බලන්න. ✅")
+	fmt.Println("\nවැඩේ ඉවරයි! File Saved. ✅")
 }
