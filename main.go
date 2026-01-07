@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kkdai/youtube/v2" 
+	"github.com/kkdai/youtube/v2"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -16,6 +16,7 @@ func main() {
 	fmt.Println("AnySaver Ultimate Downloader Starting... 🚀")
 
 	reader := bufio.NewReader(os.Stdin)
+
 	fmt.Print("Enter Video URL: ")
 	urlInput, _ := reader.ReadString('\n')
 	url := strings.TrimSpace(urlInput)
@@ -27,7 +28,11 @@ func main() {
 		fmt.Println("Direct Link Detected! 🔗")
 		downloadDirectFile(url)
 	}
+
+	fmt.Println("\nPress 'Enter' to exit...")
+	reader.ReadString('\n')
 }
+
 
 func downloadYoutubeVideo(videoURL string) {
 	client := youtube.Client{}
@@ -40,7 +45,7 @@ func downloadYoutubeVideo(videoURL string) {
 
 	fmt.Printf("Downloading: %s \n", video.Title)
 
-	formats := video.Formats.WithAudioChannels() 
+	formats := video.Formats.WithAudioChannels()
 	stream, _, err := client.GetStream(video, &formats[0])
 	if err != nil {
 		fmt.Println("Error getting stream:", err)
